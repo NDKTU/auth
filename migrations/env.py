@@ -13,6 +13,7 @@ from app.core.database import Base
 import app.models.associations  # noqa: F401
 import app.models.permission  # noqa: F401
 import app.models.role  # noqa: F401
+import app.models.student_profile  # noqa: F401
 import app.models.user  # noqa: F401
 
 config = context.config

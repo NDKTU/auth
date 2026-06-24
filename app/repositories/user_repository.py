@@ -5,8 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import app.models.permission  # noqa: F401 — must be imported before mapper resolution
+import app.models.student_profile  # noqa: F401
+from app.core.config import settings
 from app.models.role import Role
+from app.models.student_profile import StudentProfile
 from app.models.user import User
+from app.schemas.hemis import HemisProfileData
 
 _ROLES_WITH_PERMISSIONS = selectinload(User.roles).selectinload(Role.permissions)
 
@@ -36,11 +40,12 @@ class UserRepository:
 
     async def list_paginated(self, page: int, size: int) -> tuple[list[User], int]:
         offset = (page - 1) * size
-        total = (await self._session.execute(select(func.count(User.id)))).scalar_one()
+        exclude = User.username != settings.admin.username
+        total = (await self._session.execute(select(func.count(User.id)).where(exclude))).scalar_one()
         users = list(
             (
                 await self._session.execute(
-                    select(User).options(_ROLES_WITH_PERMISSIONS).offset(offset).limit(size)
+                    select(User).where(exclude).options(_ROLES_WITH_PERMISSIONS).offset(offset).limit(size)
                 )
             )
             .scalars()
@@ -67,3 +72,22 @@ class UserRepository:
         await self._session.commit()
         await self._session.refresh(user)
         return user
+
+    async def upsert_student_profile(self, user_id: int, profile: HemisProfileData) -> None:
+        existing = (
+            await self._session.execute(
+                select(StudentProfile).where(StudentProfile.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+
+        fields = profile.model_dump(exclude={"hemis_id"})
+        fields["hemis_id"] = profile.hemis_id
+
+        if existing is None:
+            sp = StudentProfile(user_id=user_id, **fields)
+            self._session.add(sp)
+        else:
+            for key, value in fields.items():
+                setattr(existing, key, value)
+
+        await self._session.commit()

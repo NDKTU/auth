@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
 from app.routers.dependencies import get_db
 from app.schemas.auth import TokenResponse
+from app.schemas.hemis import HemisLoginRequest
 from app.services.auth_service import AuthService
 
 router = APIRouter()
@@ -17,4 +18,14 @@ async def login(
 ) -> TokenResponse:
     service = AuthService(UserRepository(session))
     token = await service.login(form.username.strip(), form.password)
+    return TokenResponse(access_token=token)
+
+
+@router.post("/hemis", response_model=TokenResponse)
+async def hemis_login(
+    data: HemisLoginRequest,
+    session: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    service = AuthService(UserRepository(session))
+    token = await service.hemis_login(data.login, data.password)
     return TokenResponse(access_token=token)

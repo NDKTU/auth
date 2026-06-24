@@ -47,11 +47,12 @@ class RoleRepository:
 
     async def list_paginated(self, page: int, size: int) -> tuple[list[Role], int]:
         offset = (page - 1) * size
-        total = (await self._session.execute(select(func.count(Role.id)))).scalar_one()
+        exclude = Role.name != "admin"
+        total = (await self._session.execute(select(func.count(Role.id)).where(exclude))).scalar_one()
         roles = list(
             (
                 await self._session.execute(
-                    select(Role).options(_WITH_PERMISSIONS).offset(offset).limit(size)
+                    select(Role).where(exclude).options(_WITH_PERMISSIONS).offset(offset).limit(size)
                 )
             )
             .scalars()

@@ -11,6 +11,7 @@ from app.models.associations import user_roles
 
 if TYPE_CHECKING:
     from app.models.role import Role
+    from app.models.student_profile import StudentProfile
 
 
 class User(Base):
@@ -25,4 +26,7 @@ class User(Base):
 
     roles: Mapped[list[Role]] = relationship(
         "Role", secondary=user_roles, back_populates="users"
+    )
+    student_profile: Mapped[StudentProfile | None] = relationship(
+        "StudentProfile", back_populates="user", uselist=False
     )
