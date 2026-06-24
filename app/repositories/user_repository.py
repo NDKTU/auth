@@ -4,8 +4,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+import app.models.permission  # noqa: F401 — must be imported before mapper resolution
 from app.models.role import Role
 from app.models.user import User
+
+_ROLES_WITH_PERMISSIONS = selectinload(User.roles).selectinload(Role.permissions)
 
 
 class UserRepository:
@@ -21,13 +24,13 @@ class UserRepository:
 
     async def get_by_id(self, user_id: int) -> User | None:
         result = await self._session.execute(
-            select(User).where(User.id == user_id).options(selectinload(User.roles))
+            select(User).where(User.id == user_id).options(_ROLES_WITH_PERMISSIONS)
         )
         return result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> User | None:
         result = await self._session.execute(
-            select(User).where(User.username == username).options(selectinload(User.roles))
+            select(User).where(User.username == username).options(_ROLES_WITH_PERMISSIONS)
         )
         return result.scalar_one_or_none()
 
@@ -37,7 +40,7 @@ class UserRepository:
         users = list(
             (
                 await self._session.execute(
-                    select(User).options(selectinload(User.roles)).offset(offset).limit(size)
+                    select(User).options(_ROLES_WITH_PERMISSIONS).offset(offset).limit(size)
                 )
             )
             .scalars()
@@ -49,7 +52,7 @@ class UserRepository:
         user.roles = roles
         await self._session.commit()
         result = await self._session.execute(
-            select(User).where(User.id == user.id).options(selectinload(User.roles))
+            select(User).where(User.id == user.id).options(_ROLES_WITH_PERMISSIONS)
         )
         return result.scalar_one()
 

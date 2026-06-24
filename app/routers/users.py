@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.repositories.role_repository import RoleRepository
 from app.repositories.user_repository import UserRepository
-from app.routers.dependencies import get_current_user, get_db
+from app.routers.dependencies import get_current_user, get_db, require_permission
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import AssignRolesRequest, UserRead, UserUpdatePassword, UserUpdateUsername
 from app.services.user_service import UserService
@@ -16,12 +16,12 @@ def _service(session: AsyncSession) -> UserService:
     return UserService(UserRepository(session), RoleRepository(session))
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=UserRead, dependencies=[Depends(require_permission("users:me"))])
 async def get_me(current_user: User = Depends(get_current_user)) -> UserRead:
     return current_user
 
 
-@router.get("/", response_model=PaginatedResponse[UserRead])
+@router.get("/", response_model=PaginatedResponse[UserRead], dependencies=[Depends(require_permission("users:read"))])
 async def list_users(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
@@ -30,12 +30,12 @@ async def list_users(
     return await _service(session).list_users(page, size)
 
 
-@router.get("/{user_id}", response_model=UserRead)
+@router.get("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permission("users:read"))])
 async def get_user(user_id: int, session: AsyncSession = Depends(get_db)) -> UserRead:
     return await _service(session).get_user(user_id)
 
 
-@router.patch("/{user_id}", response_model=UserRead)
+@router.patch("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permission("users:update"))])
 async def update_username(
     user_id: int,
     data: UserUpdateUsername,
@@ -44,7 +44,7 @@ async def update_username(
     return await _service(session).update_username(user_id, data)
 
 
-@router.patch("/{user_id}/password", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{user_id}/password", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_permission("users:update_password"))])
 async def update_password(
     user_id: int,
     data: UserUpdatePassword,
@@ -53,7 +53,7 @@ async def update_password(
     await _service(session).update_password(user_id, data)
 
 
-@router.post("/{user_id}/roles", response_model=UserRead)
+@router.post("/{user_id}/roles", response_model=UserRead, dependencies=[Depends(require_permission("users:assign_roles"))])
 async def assign_roles(
     user_id: int,
     data: AssignRolesRequest,

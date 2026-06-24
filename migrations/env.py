@@ -11,6 +11,7 @@ from app.core.database import Base
 
 # import all models so that Base.metadata knows about them
 import app.models.associations  # noqa: F401
+import app.models.permission  # noqa: F401
 import app.models.role  # noqa: F401
 import app.models.user  # noqa: F401
 

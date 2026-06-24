@@ -8,6 +8,15 @@ class RoleService:
     def __init__(self, role_repo: RoleRepository) -> None:
         self._role_repo = role_repo
 
+    async def list_roles(self) -> list[Role]:
+        return await self._role_repo.list_all()
+
+    async def get_role(self, role_id: int) -> Role:
+        role = await self._role_repo.get_by_id(role_id)
+        if role is None:
+            raise RoleNotFoundException()
+        return role
+
     async def create_role(self, data: RoleCreate) -> Role:
         existing = await self._role_repo.get_by_name(data.name)
         if existing:

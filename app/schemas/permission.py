@@ -1,20 +1,22 @@
 from pydantic import BaseModel, ConfigDict
 
-from app.schemas.permission import PermissionRead
 from app.schemas.types import StrNormalized
 
 
-class RoleCreate(BaseModel):
+class PermissionCreate(BaseModel):
     name: StrNormalized
 
 
-class RoleUpdate(BaseModel):
+class PermissionUpdate(BaseModel):
     name: StrNormalized | None = None
 
 
-class RoleRead(BaseModel):
+class PermissionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
-    permissions: list[PermissionRead]
+
+
+class AssignPermissionsRequest(BaseModel):
+    permission_ids: list[int]
