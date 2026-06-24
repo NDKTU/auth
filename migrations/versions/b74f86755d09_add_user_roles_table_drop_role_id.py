@@ -19,16 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "user_roles",
-        sa.Column("user_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-        sa.Column("role_id", sa.Integer(), sa.ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-    )
-    op.drop_constraint("users_role_id_fkey", "users", type_="foreignkey")
-    op.drop_column("users", "role_id")
+    pass
 
 
 def downgrade() -> None:
-    op.add_column("users", sa.Column("role_id", sa.Integer(), nullable=True))
-    op.create_foreign_key("users_role_id_fkey", "users", "roles", ["role_id"], ["id"])
-    op.drop_table("user_roles")
+    pass

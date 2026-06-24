@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.permission import Permission
@@ -36,6 +36,20 @@ class PermissionRepository:
     async def list_all(self) -> list[Permission]:
         result = await self._session.execute(select(Permission))
         return list(result.scalars().all())
+
+    async def list_paginated(self, page: int, size: int) -> tuple[list[Permission], int]:
+        offset = (page - 1) * size
+        total = (await self._session.execute(select(func.count(Permission.id)))).scalar_one()
+        perms = list(
+            (
+                await self._session.execute(
+                    select(Permission).offset(offset).limit(size)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return perms, total
 
     async def update(self, permission: Permission, **fields) -> Permission:
         for key, value in fields.items():

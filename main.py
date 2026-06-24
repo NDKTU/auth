@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 
 from app.core.database import db_helper
-from app.core.startup import ensure_permissions
+from app.core.startup import ensure_admin, ensure_permissions
 from app.routers.auth import router as auth_router
 from app.routers.permissions import router as permissions_router
 from app.routers.roles import router as roles_router
@@ -14,6 +14,7 @@ from app.routers.users import router as users_router
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await ensure_permissions()
+    await ensure_admin()
     yield
     await db_helper.dispose()
 

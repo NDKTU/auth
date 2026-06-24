@@ -1,15 +1,25 @@
+from math import ceil
+
 from app.exceptions.role_exceptions import RoleAlreadyExistsException, RoleNotFoundException
 from app.models.role import Role
 from app.repositories.role_repository import RoleRepository
-from app.schemas.role import RoleCreate, RoleUpdate
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.role import RoleCreate, RoleRead, RoleUpdate
 
 
 class RoleService:
     def __init__(self, role_repo: RoleRepository) -> None:
         self._role_repo = role_repo
 
-    async def list_roles(self) -> list[Role]:
-        return await self._role_repo.list_all()
+    async def list_roles(self, page: int, size: int) -> PaginatedResponse[RoleRead]:
+        roles, total = await self._role_repo.list_paginated(page, size)
+        return PaginatedResponse(
+            items=roles,
+            total=total,
+            page=page,
+            size=size,
+            total_pages=ceil(total / size) if total > 0 else 1,
+        )
 
     async def get_role(self, role_id: int) -> Role:
         role = await self._role_repo.get_by_id(role_id)

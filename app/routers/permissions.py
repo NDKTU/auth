@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.permission_repository import PermissionRepository
 from app.repositories.role_repository import RoleRepository
 from app.routers.dependencies import get_db, require_permission
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.permission import PermissionRead
 from app.services.permission_service import PermissionService
 
@@ -15,9 +16,13 @@ def _service(session: AsyncSession) -> PermissionService:
 router = APIRouter()
 
 
-@router.get("/", response_model=list[PermissionRead], dependencies=[Depends(require_permission("permissions:read"))])
-async def list_permissions(session: AsyncSession = Depends(get_db)) -> list[PermissionRead]:
-    return await _service(session).list_permissions()
+@router.get("/", response_model=PaginatedResponse[PermissionRead], dependencies=[Depends(require_permission("permissions:read"))])
+async def list_permissions(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    session: AsyncSession = Depends(get_db),
+) -> PaginatedResponse[PermissionRead]:
+    return await _service(session).list_permissions(page, size)
 
 
 @router.get("/{permission_id}", response_model=PermissionRead, dependencies=[Depends(require_permission("permissions:read"))])

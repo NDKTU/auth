@@ -1,3 +1,5 @@
+from math import ceil
+
 from fastapi import HTTPException, status
 
 from app.exceptions.permission_exceptions import (
@@ -9,7 +11,8 @@ from app.models.permission import Permission
 from app.models.role import Role
 from app.repositories.permission_repository import PermissionRepository
 from app.repositories.role_repository import RoleRepository
-from app.schemas.permission import PermissionCreate, PermissionUpdate
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.permission import PermissionCreate, PermissionRead, PermissionUpdate
 
 
 class PermissionService:
@@ -17,8 +20,15 @@ class PermissionService:
         self._permission_repo = permission_repo
         self._role_repo = role_repo
 
-    async def list_permissions(self) -> list[Permission]:
-        return await self._permission_repo.list_all()
+    async def list_permissions(self, page: int, size: int) -> PaginatedResponse[PermissionRead]:
+        perms, total = await self._permission_repo.list_paginated(page, size)
+        return PaginatedResponse(
+            items=perms,
+            total=total,
+            page=page,
+            size=size,
+            total_pages=ceil(total / size) if total > 0 else 1,
+        )
 
     async def get_permission(self, permission_id: int) -> Permission:
         permission = await self._permission_repo.get_by_id(permission_id)

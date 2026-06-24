@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.permission_repository import PermissionRepository
 from app.repositories.role_repository import RoleRepository
 from app.routers.dependencies import get_db, require_permission
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.role import RoleCreate, RoleRead, RoleUpdate
 from app.schemas.permission import AssignPermissionsRequest
 from app.services.permission_service import PermissionService
@@ -12,9 +13,13 @@ from app.services.role_service import RoleService
 router = APIRouter()
 
 
-@router.get("/", response_model=list[RoleRead], dependencies=[Depends(require_permission("roles:read"))])
-async def list_roles(session: AsyncSession = Depends(get_db)) -> list[RoleRead]:
-    return await RoleService(RoleRepository(session)).list_roles()
+@router.get("/", response_model=PaginatedResponse[RoleRead], dependencies=[Depends(require_permission("roles:read"))])
+async def list_roles(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    session: AsyncSession = Depends(get_db),
+) -> PaginatedResponse[RoleRead]:
+    return await RoleService(RoleRepository(session)).list_roles(page, size)
 
 
 @router.get("/{role_id}", response_model=RoleRead, dependencies=[Depends(require_permission("roles:read"))])

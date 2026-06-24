@@ -16,6 +16,11 @@ class AuthSettings(BaseModel):
     access_token_expire_minutes: int = 60
 
 
+class AdminSettings(BaseModel):
+    username: str = "admin"
+    password: str = "admin123"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -26,6 +31,7 @@ class Settings(BaseSettings):
 
     database: DatabaseSettings
     auth: AuthSettings
+    admin: AdminSettings = AdminSettings()
 
 
 settings = Settings()

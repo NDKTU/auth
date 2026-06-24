@@ -1,4 +1,6 @@
-from sqlalchemy import select
+from math import ceil
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -43,9 +45,19 @@ class RoleRepository:
         )
         return result.scalar_one()
 
-    async def list_all(self) -> list[Role]:
-        result = await self._session.execute(select(Role).options(_WITH_PERMISSIONS))
-        return list(result.scalars().all())
+    async def list_paginated(self, page: int, size: int) -> tuple[list[Role], int]:
+        offset = (page - 1) * size
+        total = (await self._session.execute(select(func.count(Role.id)))).scalar_one()
+        roles = list(
+            (
+                await self._session.execute(
+                    select(Role).options(_WITH_PERMISSIONS).offset(offset).limit(size)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return roles, total
 
     async def get_by_ids(self, role_ids: list[int]) -> list[Role]:
         result = await self._session.execute(
