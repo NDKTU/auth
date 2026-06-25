@@ -1,12 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class HemisLoginRequest(BaseModel):
-    login: str
-    password: str
+class StudentProfileRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
-
-class HemisProfileData(BaseModel):
+    id: int
+    user_id: int
     hemis_id: int
     student_id_number: str
     passport_pin: str | None = None
@@ -42,4 +41,3 @@ class HemisProfileData(BaseModel):
     social_category: dict | None = None
     poverty_level: dict | None = None
     accommodation: dict | None = None
-    raw_data: dict

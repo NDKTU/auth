@@ -17,6 +17,14 @@ class RoleRepository:
     async def create(self, name: str) -> Role:
         role = Role(name=name)
         self._session.add(role)
+        await self._session.flush()
+
+        me_perm = (await self._session.execute(
+            select(Permission).where(Permission.name == "users:me")
+        )).scalar_one_or_none()
+        if me_perm:
+            role.permissions = [me_perm]
+
         await self._session.commit()
         result = await self._session.execute(
             select(Role).where(Role.id == role.id).options(_WITH_PERMISSIONS)

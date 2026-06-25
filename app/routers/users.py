@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
@@ -6,6 +6,7 @@ from app.repositories.role_repository import RoleRepository
 from app.repositories.user_repository import UserRepository
 from app.routers.dependencies import get_current_user, get_db, require_permission
 from app.schemas.pagination import PaginatedResponse
+from app.schemas.student_profile import StudentProfileRead
 from app.schemas.user import AssignRolesRequest, UserRead, UserUpdatePassword, UserUpdateUsername
 from app.services.user_service import UserService
 
@@ -19,6 +20,21 @@ def _service(session: AsyncSession) -> UserService:
 @router.get("/me", response_model=UserRead, dependencies=[Depends(require_permission("users:me"))])
 async def get_me(current_user: User = Depends(get_current_user)) -> UserRead:
     return current_user
+
+
+@router.get(
+    "/me/profile",
+    response_model=StudentProfileRead,
+    dependencies=[Depends(require_permission("users:me"))],
+)
+async def get_my_profile(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+) -> StudentProfileRead:
+    profile = await UserRepository(session).get_student_profile(current_user.id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student profile not found")
+    return profile
 
 
 @router.get("/", response_model=PaginatedResponse[UserRead], dependencies=[Depends(require_permission("users:read"))])

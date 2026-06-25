@@ -91,3 +91,25 @@ class UserRepository:
                 setattr(existing, key, value)
 
         await self._session.commit()
+
+    async def assign_student_role(self, user: User) -> None:
+        user = (await self._session.execute(
+            select(User).where(User.id == user.id).options(selectinload(User.roles))
+        )).scalar_one()
+
+        student_role = (await self._session.execute(
+            select(Role).where(Role.name == "student")
+        )).scalar_one_or_none()
+
+        if student_role is None:
+            return
+
+        if student_role.id not in {r.id for r in user.roles}:
+            user.roles.append(student_role)
+            await self._session.commit()
+
+    async def get_student_profile(self, user_id: int) -> StudentProfile | None:
+        result = await self._session.execute(
+            select(StudentProfile).where(StudentProfile.user_id == user_id)
+        )
+        return result.scalar_one_or_none()

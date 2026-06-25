@@ -77,3 +77,27 @@ async def ensure_admin() -> None:
             if admin_role.id not in role_ids:
                 admin_user.roles.append(admin_role)
                 await session.commit()
+
+
+async def ensure_student_role() -> None:
+    async with db_helper.session_factory() as session:
+        student_role = (await session.execute(
+            select(Role).where(Role.name == "student").options(selectinload(Role.permissions))
+        )).scalar_one_or_none()
+
+        if student_role is None:
+            student_role = Role(name="student")
+            session.add(student_role)
+            await session.flush()
+            student_role = (await session.execute(
+                select(Role).where(Role.id == student_role.id).options(selectinload(Role.permissions))
+            )).scalar_one()
+
+        me_perm = (await session.execute(
+            select(Permission).where(Permission.name == "users:me")
+        )).scalar_one_or_none()
+
+        if me_perm and me_perm not in student_role.permissions:
+            student_role.permissions.append(me_perm)
+
+        await session.commit()
