@@ -12,13 +12,13 @@ class AuthService:
         user = await self._user_repo.get_by_username(username)
         if user is None or not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException()
-        return create_access_token({"sub": str(user.id)})
+        return create_access_token({"sub": str(user.id), "roles": [r.name for r in user.roles]})
 
     async def hemis_login(self, login: str, password: str) -> str:
         # Быстрый путь: локальная БД
         user = await self._user_repo.get_by_username(login)
         if user is not None and verify_password(password, user.hashed_password):
-            return create_access_token({"sub": str(user.id)})
+            return create_access_token({"sub": str(user.id), "roles": [r.name for r in user.roles]})
 
         # Медленный путь: обращение к HEMIS
         profile = await HemisService().login(login, password)
@@ -35,4 +35,5 @@ class AuthService:
 
         await self._user_repo.upsert_student_profile(user.id, profile)
         await self._user_repo.assign_student_role(user)
-        return create_access_token({"sub": str(user.id)})
+        user = await self._user_repo.get_by_id(user.id)
+        return create_access_token({"sub": str(user.id), "roles": [r.name for r in user.roles]})
