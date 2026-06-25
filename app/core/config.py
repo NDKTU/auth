@@ -21,6 +21,11 @@ class AdminSettings(BaseModel):
     password: str = "admin123"
 
 
+class RateLimitSettings(BaseModel):
+    login_per_minute: int = 10
+    hemis_per_minute: int = 5
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -32,6 +37,7 @@ class Settings(BaseSettings):
     database: DatabaseSettings
     auth: AuthSettings
     admin: AdminSettings = AdminSettings()
+    rate_limit: RateLimitSettings = RateLimitSettings()
 
 
 settings = Settings()
